@@ -41,11 +41,12 @@ See also: [`FastForwardBackward`](@ref).
 1. Tseng, "On Accelerated Proximal Gradient Methods for Convex-Concave Optimization" (2008).
 2. Beck, Teboulle, "A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems", SIAM Journal on Imaging Sciences, vol. 2, no. 1, pp. 183-202 (2009).
 """
-Base.@kwdef struct FastForwardBackwardIteration{R,Tx,Tf,Tg,TLf,Tgamma,Textr}
+Base.@kwdef struct FastForwardBackwardIteration{R,Tx,Tf,Tdf,Tg,TLf,Tgamma,Textr}
     f::Tf = Zero()
     g::Tg = Zero()
     x0::Tx
     mf::R = real(eltype(x0))(0)
+    ∇f::Tdf = nothing,          # an optional closed-form for the gradient
     Lf::TLf = nothing
     gamma::Tgamma = Lf === nothing ? nothing : (1 / Lf)
     adaptive::Bool = gamma === nothing
@@ -72,7 +73,20 @@ end
 
 function Base.iterate(iter::FastForwardBackwardIteration)
     x = copy(iter.x0)
-    f_x, grad_f_x = value_and_gradient(iter.f, x)
+    if !isnothing(∇f)
+        try
+            f_x = f(x)
+            grad_f_x = ∇f(x)
+        catch
+            f_x, grad_f_x = value_and_gradient(iter.f, x)
+        end
+
+        if f_x ∈ [NaN, Inf, -Inf] || grad_f_x ∈ [NaN, Inf, -Inf]
+            f_x, grad_f_x = value_and_gradient(iter.f, x)
+        end
+    else
+        f_x, grad_f_x = value_and_gradient(iter.f, x)
+    end
     gamma =
         iter.gamma === nothing ?
         1 / lower_bound_smoothness_constant(iter.f, I, x, grad_f_x) : iter.gamma
