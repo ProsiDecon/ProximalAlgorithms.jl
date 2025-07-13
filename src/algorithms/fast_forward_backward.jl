@@ -73,6 +73,9 @@ end
 
 function Base.iterate(iter::FastForwardBackwardIteration)
     x = copy(iter.x0)
+    f = iter.f 
+    ∇f = iter.∇f
+    
     if !isnothing(∇f)
         try
             f_x = f(x)
