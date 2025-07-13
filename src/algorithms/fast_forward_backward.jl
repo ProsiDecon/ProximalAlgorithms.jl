@@ -46,7 +46,7 @@ Base.@kwdef struct FastForwardBackwardIteration{R,Tx,Tf,Tdf,Tg,TLf,Tgamma,Textr}
     g::Tg = Zero()
     x0::Tx
     mf::R = real(eltype(x0))(0)
-    ∇f::Tdf = nothing,          # an optional closed-form for the gradient
+    ∇f::Tdf = nothing          # an optional closed-form for the gradient
     Lf::TLf = nothing
     gamma::Tgamma = Lf === nothing ? nothing : (1 / Lf)
     adaptive::Bool = gamma === nothing
